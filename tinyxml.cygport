@@ -1,0 +1,53 @@
+NAME="tinyxml"
+VERSION=2.6.2
+RELEASE=1
+CATEGORY="Libs"
+SUMMARY="Simple C++ XML parser library"
+DESCRIPTION="TinyXML-2 is a simple, small, efficient, C++ XML parser that can
+be easily integrating into other programs."
+HOMEPAGE="http://www.grinninglizard.com/tinyxml2/"
+SRC_URI="mirror://sourceforge/tinyxml/tinyxml_${VERSION//\./_}.tar.gz"
+SRC_DIR="tinyxml"
+PATCH_URI="http://pkgs.fedoraproject.org/cgit/tinyxml.git/plain/tinyxml-2.5.3-stl.patch"
+
+src_compile() {
+	lndirs
+	cd ${B}
+	cygmake CC=${CC} CXX=${CXX} LD=${CXX} AR="${AR} rc" RANLIB=${RANLIB} CXXFLAGS="${CXXFLAGS} -DTIXML_USE_STL"
+	${CXX} -shared -o cygtinyxml-0.dll -Wl,--out-implib,libtinyxml.dll.a tiny*.o
+
+	cat > tinyxml.pc <<_EOF
+prefix=/usr
+exec_prefix=/usr
+libdir=\${prefix}/lib
+includedir=\${prefix}/include
+
+Name: TinyXML
+Description: A simple, small, C++ XML parser
+Version: ${VERSION}
+Libs: -L\${libdir} -ltinyxml
+Cflags: -I\${includedir} -DTIXML_USE_STL=1
+_EOF
+}
+
+src_test() {
+	cd ${B}
+	./xmltest
+}
+
+src_install() {
+	cd ${B}
+	dobin cygtinyxml-0.dll
+	dolib libtinyxml.dll.a
+	doinclude tinyxml.h
+	dopkgconfig tinyxml.pc
+	dodoc ${S}/*.txt
+	docinto html
+	dodoc ${S}/docs/*
+}
+
+PKG_NAMES="libtinyxml0 libtinyxml-devel libtinyxml-doc"
+libtinyxml0_CONTENTS="--exclude=html usr/bin/cygtinyxml-0.dll usr/share/doc/"
+libtinyxml_devel_CONTENTS="usr/include/tinyxml.h usr/lib/libtinyxml.* usr/lib/pkgconfig/tinyxml.pc"
+libtinyxml_doc_CATEGORY="Doc"
+libtinyxml_doc_CONTENTS="usr/share/doc/${NAME}/html/"
